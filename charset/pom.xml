@@ -5,10 +5,16 @@
 	<parent>
 		<groupId>org.opensmpp</groupId>
 		<artifactId>opensmpp-parent</artifactId>
-		<version>3.0.1-SNAPSHOT</version>
+		<version>3.0.3-SNAPSHOT</version>
 	</parent>	
 	<artifactId>opensmpp-charset</artifactId>
 	<packaging>jar</packaging>
 	<name>OpenSMPP Character Sets</name>
 
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+	</dependencies>
 </project>

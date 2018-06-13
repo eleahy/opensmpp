@@ -170,7 +170,7 @@ public class Gsm7BitCharset extends Charset {
 		{ "~",  new Byte((byte) 0x3d) },
 		{ "]",  new Byte((byte) 0x3e) },
 		{ "|",  new Byte((byte) 0x40) },
-		{ "",  new Byte((byte) 0x65) }
+		{ "€",  new Byte((byte) 0x65) }
 	};
 
 	private static Logger logger = Logger.getLogger(Gsm7BitCharset.class.getName());
@@ -255,7 +255,11 @@ public class Gsm7BitCharset extends Charset {
 		protected CoderResult encodeLoop(CharBuffer cb, ByteBuffer bb) {
 			CoderResult cr = CoderResult.UNDERFLOW;
 
-			while (cb.hasRemaining() && bb.hasRemaining()) {
+			while (cb.hasRemaining()) {
+				if (!bb.hasRemaining()) {
+					cr = CoderResult.OVERFLOW;
+					break;
+				}
 				char ch = cb.get();
 
 				// first check the default alphabet
@@ -314,7 +318,11 @@ public class Gsm7BitCharset extends Charset {
 		protected CoderResult decodeLoop(ByteBuffer bb, CharBuffer cb) {
 			CoderResult cr = CoderResult.UNDERFLOW;
 
-			while (bb.hasRemaining() && cb.hasRemaining()) {
+			while (bb.hasRemaining()) {
+				if (!cb.hasRemaining()) {
+					cr = CoderResult.OVERFLOW;
+					break;
+				}
 				byte b = bb.get();
 
 				// first check the default alphabet

@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.opensmpp</groupId>
 	<artifactId>opensmpp-parent</artifactId>
-	<version>3.0.1-SNAPSHOT</version>
+	<version>3.0.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>OpenSMPP</name>
 	<description>
@@ -97,6 +97,9 @@
 	<profiles>
 		<profile>
 			<id>release-sign-artifacts</id>
+         <properties>
+            <gpg.executable>gpg2</gpg.executable>
+         </properties>
 			<activation>
 				<property>
 					<name>performRelease</name>
@@ -218,6 +221,8 @@
 				<version>2.9</version>
 				<configuration>
 					<encoding>UTF-8</encoding>
+               <!-- Java 8 became stricter, and fails builds if it finds invalid Javadoc . Disable: -->
+               <additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
 				<executions>
 					<execution>
@@ -238,6 +243,24 @@
 					<preparationGoals>clean test</preparationGoals>
 					<tagNameFormat>v@{project.version}</tagNameFormat>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+		        <version>2.21.0</version>
+				<configuration>
+					<!-- headless: stop ForkedBooter from popping up all over the place on OSX GUI. -->
+					<argLine>-Djava.awt.headless=true</argLine>
+					<forkCount>1</forkCount>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -12,6 +12,7 @@ package org.smpp;
 
 import org.smpp.util.*;
 
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -38,6 +39,7 @@ import javax.net.SocketFactory;
  * @see java.io.BufferedOutputStream
  */
 public class TCPIPConnection extends Connection {
+	private int requestedPort = 0;
 	/**
 	 * The port number on the remote host to which the <code>socket</code>
 	 * is connected or port number where <code>receiverSocket</code>
@@ -173,11 +175,11 @@ public class TCPIPConnection extends Connection {
 	 * The accepting of the connection must be invoked explicitly by
 	 * calling of <code>accept</code> method.
 	 *
-	 * @param port the port number to listen on
+	 * @param port the port number to listen on (or zero to assign an ephemeral port)
 	 */
 	public TCPIPConnection(int port) {
-		if ((port >= Data.MIN_VALUE_PORT) && (port <= Data.MAX_VALUE_PORT)) {
-			this.port = port;
+		if ( port == 0 ||  (port >= Data.MIN_VALUE_PORT && port <= Data.MAX_VALUE_PORT)) {
+			this.requestedPort = port;
 		} else {
 			debug.write("Invalid port.");
 		}
@@ -197,7 +199,7 @@ public class TCPIPConnection extends Connection {
 		} else {
 			debug.write("Invalid address.");
 		}
-		if ((port >= Data.MIN_VALUE_PORT) && (port <= Data.MAX_VALUE_PORT)) {
+		if ((port >= Data.MIN_VALUE_PORT) && (port <= Data.MAX_VALUE_PORT) ) {
 			this.port = port;
 		} else {
 			debug.write("Invalid port.");
@@ -241,7 +243,8 @@ public class TCPIPConnection extends Connection {
 		if (!opened) {
 			if (connType == CONN_CLIENT) {
 				try {
-					socket = socketFactory.createSocket(address, port);
+					socket = socketFactory.createSocket();
+					socket.connect(new InetSocketAddress(address,port), this.getConnectionTimeout());
 					initialiseIOStreams(socket);
 					opened = true;
 					debug.write(DCOM, "opened client tcp/ip connection to " + address + " on port " + port);
@@ -252,9 +255,10 @@ public class TCPIPConnection extends Connection {
 				}
 			} else if (connType == CONN_SERVER) {
 				try {
-					receiverSocket = serverSocketFactory.createServerSocket(port);
+					receiverSocket = serverSocketFactory.createServerSocket(requestedPort);
 					opened = true;
-					debug.write(DCOM, "listening tcp/ip on port " + port);
+					this.port = receiverSocket.getLocalPort();
+					debug.write(DCOM, "listening tcp/ip on port " + this.port);
 				} catch (IOException e) {
 					debug.write("IOException creating listener socket " + e);
 					exception = e;
@@ -324,7 +328,6 @@ public class TCPIPConnection extends Connection {
 
 	/**
 	 * Sends data over the connection. Must be client type connection.
-	 * The timeout for sending is set by <code>setCommsTimeout</code>.
 	 *
 	 * @see java.net.Socket
 	 */
@@ -338,7 +341,6 @@ public class TCPIPConnection extends Connection {
 		}
 		if (connType == CONN_CLIENT) {
 			try {
-				socket.setSoTimeout((int) getCommsTimeout());
 				try {
 					outputStream.write(data.getBuffer(), 0, data.length());
 					debug.write(DCOM, "sent " + data.length() + " bytes to " + address + " on port " + port);
@@ -566,6 +568,10 @@ public class TCPIPConnection extends Connection {
 	 */
 	public boolean isOpened() {
 		return opened;
+	}
+
+	public int getPort() {
+		return this.port;
 	}
 }
 /*

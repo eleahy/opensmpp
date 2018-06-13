@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.smpp.Data;
 import org.smpp.util.ByteBuffer;
 import org.smpp.util.NotEnoughDataInByteBufferException;
 import org.smpp.util.TerminatingZeroNotFoundException;
@@ -22,6 +23,7 @@ public class ByteBufferTest {
 	private static final byte A = 0x41;
 	private static final byte B = 0x42;
 	private static final byte C = 0x43;
+	private static final byte UNDERLINE = 0x5F;
 
 	private ByteBuffer buffer;
 	private byte t_bite = (byte) 0x1f;
@@ -46,6 +48,19 @@ public class ByteBufferTest {
 		buffer = new ByteBuffer(new byte[] {});
 		buffer.appendByte(t_bite);
 		assertBufferMatches(t_bite);
+	}
+
+	@Test
+	public void testUnsignedByte() throws NotEnoughDataInByteBufferException {
+		// This demonstrates the inconvenient behaviour of signed Java bytes:
+		assertEquals((short) 0x7f, bufferOf((byte) 0x7f).removeByte());
+		assertEquals((short) -128, bufferOf((byte) 0x80).removeByte());
+		assertEquals((short) -1, bufferOf((byte) 0xff).removeByte());
+		
+		// ...which removeUnsignedByte() provides a solution for:
+		assertEquals((short) 0x7f, bufferOf((byte) 0x7f).removeUnsignedByte());
+		assertEquals((short) 0x80, bufferOf((byte) 0x80).removeUnsignedByte());
+		assertEquals((short) 0xff, bufferOf((byte) 0xff).removeUnsignedByte());
 	}
 
 	@Test
@@ -395,6 +410,24 @@ public class ByteBufferTest {
 		buffer = bufferOf(A, B, NULL, C, NULL);
 		buffer.removeCString();
 		assertEquals(2, buffer.length());
+	}
+
+	@Test
+	public void testRemoveCStringRemovesWithDefaultEncoding() throws Exception {
+		buffer = bufferOf(A, UNDERLINE, NULL);
+		assertEquals("A_", buffer.removeCString());
+	}
+
+	@Test
+	public void testRemoveCStringRemovesWithASCIIEncoding() throws Exception {
+		buffer = bufferOf(A, UNDERLINE, NULL);
+		assertEquals("A_", buffer.removeCString(Data.ENC_ASCII));
+	}
+
+	@Test
+	public void testRemoveCStringRemovesWithGSM7BITEncoding() throws Exception {
+		buffer = bufferOf(A, UNDERLINE, NULL);
+		assertEquals("A§", buffer.removeCString(Data.ENC_GSM7BIT));
 	}
 
 	@Test
